@@ -247,8 +247,7 @@ def delete_aoai_deployments(auth_token, subscription_id, resource_group_name, ao
 # Initialize the function app
 app = func.FunctionApp()
 
-@app.schedule(schedule="0 * * * * *", arg_name="myTimer", run_on_startup=True,
-              use_monitor=False) 
+@app.schedule(schedule="0 * * * * *", arg_name="myTimer", run_on_startup=True, use_monitor=False) 
 def timer_trigger(myTimer: func.TimerRequest) -> None:
     logging.info('---------------------- Python timer trigger function started.')
     
@@ -292,9 +291,9 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
             Q: how are we enforcing the model type when creating deployments for PTU usage?
             e.g. if the commitment plan is for GPT-3.5 (which commitment plan does not have any specification other then the given name), how are we ensuring that the deployment created is also for GPT-3.5?
 
-        we can directly get the deployment name from the commitment plan.
+        we can get the commitment plan list, then all the deployments under that resource
         and if the commitment plan expired, then we can delete all the deployment that is provisionedManaged.
-        this is deleting regardless of the model type, version and ptu allocation.
+        this is deleting regardless of the model type, version and ptu allocation, bc we are assuming that the commitment plan is 1:1 with the resource.
 
     """
 
