@@ -182,7 +182,6 @@ def list_aoai_deployments(auth_token, subscription_id, resource_group_name, aoai
     return deployment_list
 
 def list_aoai_expired_commitment_plans(auth_token, subscription_id, resource_group_name, aoai_service_name):
-    # https://management.azure.com/subscriptions/0988137f-9fcd-4e36-b99f-e5b3f35b28db/resourceGroups/RG-OpenAI-InclPTUs/providers/Microsoft.CognitiveServices/accounts/gbb-ea-openai-swedencentral-gpt35turbo1106/commitmentPlans?api-version=2023-05-01
     commitment_plans = []
     url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/commitmentPlans?api-version={default_ai_service_api_version}"
     headers = {
@@ -228,7 +227,6 @@ def delete_aoai_deployments(auth_token, subscription_id, resource_group_name, ao
     return
     # TESTING
 
-    # DELETE https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.CognitiveServices/accounts/{accountName}/deployments/{deploymentName}?api-version=2023-05-01
     url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/deployments/{deployment_name}?api-version={default_ai_service_api_version}"
     headers = {
         "Authorization": f"Bearer {auth_token}"
@@ -263,8 +261,8 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
 
     # find subscription id
     subscription_id : str = ""
-    # sub_display_name = "MCAPS-Hybrid-REQ-67385-2023-juhyunlee"
-    sub_display_name = "AI GBB - Early Access Subscription A (azureaiblackbelts.com)"
+    # sub_display_name = "MY_TEST_SUB"
+    sub_display_name = "TEST_SUB_NAME"
     for subscription in subscriptions:
         if subscription["displayName"] == sub_display_name and subscription["state"] == "Enabled":
             subscription_id = subscription["subscriptionId"]
@@ -278,11 +276,11 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
     
     # listing resource groups
     # resource_groups = list_resource_groups(token, subscription_id)
-    rg_name = "RG-OpenAI-InclPTUs"
+    rg_name = "MyResourceGroup"
 
     # listing all azure openai services
     # aoai_services = list_aoai_services(token, subscription_id, rg_name)
-    aoai_service_name = "gbb-ea-openai-swedencentral-gpt4o-A"
+    aoai_service_name = "MyOpenAIServiceName"
 
     # getting commitment plan for the service
     commitment_plan_to_check = list_aoai_expired_commitment_plans(token, subscription_id, rg_name, aoai_service_name)
