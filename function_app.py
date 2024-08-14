@@ -47,13 +47,16 @@ def get_auth_token():
 
 def list_subscriptions(auth_token):
     subscription_list = []
-    url = f"{base_url}subscriptions?api-version={default_api_version}"
+    url = f"{base_url}subscriptions"
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        "api-version": default_api_version
+    }
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
             
             data = response.json()
@@ -82,13 +85,16 @@ def list_subscriptions(auth_token):
 
 def list_resource_groups(auth_token, subscription_id):
     resourcegroup_list = []
-    url = f"{base_url}subscriptions/{subscription_id}/resourcegroups?api-version={default_api_version}"
+    url = f"{base_url}subscriptions/{subscription_id}/resourcegroups"
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        "api-version": default_api_version
+    }
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
             
             data = response.json()
@@ -114,18 +120,23 @@ def list_resource_groups(auth_token, subscription_id):
 
 def list_aoai_services(auth_token, subscription_id, resource_group_name):
     aoai_service_list = []
-    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts?$filter=kind eq OpenAI&api-version={default_ai_service_api_version}"
+    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts"
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        # "$filter": "kind eq OpenAI",
+        "api-version": default_ai_service_api_version
+    }
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
             
             data = response.json()
             value = data.get("value", [])
-            aoai_service_list.extend(value)  # Add current page's resource groups to the list
+            openai_services = list(filter(lambda x: x["kind"] == "OpenAI", value))
+            aoai_service_list.extend(openai_services)  # Add current page's resource groups to the list
             
             # Check if 'nextLink' exists; if not, we're done
             if 'nextLink' not in data:
@@ -147,14 +158,17 @@ def list_aoai_services(auth_token, subscription_id, resource_group_name):
 
 def list_aoai_deployments(auth_token, subscription_id, resource_group_name, aoai_service_name):
     deployment_list = []
-    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/deployments?api-version={default_ai_service_api_version}"
+    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/deployments"
     # $filter parameter does not work with this api call
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        "api-version": default_ai_service_api_version
+    }
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
             
             data = response.json()
@@ -183,22 +197,25 @@ def list_aoai_deployments(auth_token, subscription_id, resource_group_name, aoai
 
 def list_aoai_expired_commitment_plans(auth_token, subscription_id, resource_group_name, aoai_service_name):
     commitment_plans = []
-    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/commitmentPlans?api-version={default_ai_service_api_version}"
+    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/commitmentPlans"
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        "api-version": default_ai_service_api_version
+    }
     while True:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
             
             data = response.json()
             values = data.get("value", [])
-            # for value in values:
-            #     has_expired = is_timestamp_expired(value["properties"]["current"]["endDate"])
-            #     logging.info(has_expired)
-            #     if value["properties"]["autoRenew"] == False and has_expired:
-            #         commitment_plans.append(value)
+            for value in values:
+                has_expired = is_timestamp_expired(value["properties"]["current"]["endDate"])
+                logging.info(has_expired)
+                if value["properties"]["autoRenew"] == False and has_expired:
+                    commitment_plans.append(value)
 
             commitment_plans.extend(values)
             
@@ -227,12 +244,15 @@ def delete_aoai_deployments(auth_token, subscription_id, resource_group_name, ao
     return
     # TESTING
 
-    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/deployments/{deployment_name}?api-version={default_ai_service_api_version}"
+    url = f"{base_url}subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.CognitiveServices/accounts/{aoai_service_name}/deployments/{deployment_name}"
     headers = {
         "Authorization": f"Bearer {auth_token}"
     }
+    params = {
+        "api-version": default_ai_service_api_version
+    }
     try:
-        response = requests.delete(url, headers=headers)
+        response = requests.delete(url, headers=headers, params=params)
         response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
         logging.info(f"Deployment {deployment_name} deleted successfully.")
     except requests.exceptions.HTTPError as http_err:
@@ -255,31 +275,25 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
     token = get_auth_token()
 
     # listing subscriptions
-    subscriptions = list_subscriptions(token)
-    # logging.info(json.dumps(subscriptions, indent=4))
-
-    # find subscription id
-    subscription_id : str = ""
-    # sub_display_name = "MY_TEST_SUB"
-    sub_display_name = "TEST_SUB_NAME"
-    for subscription in subscriptions:
-        if subscription["displayName"] == sub_display_name and subscription["state"] == "Enabled":
-            subscription_id = subscription["subscriptionId"]
-            logging.info(f"Subscription ID: {subscription_id}")
-            break
-    
+    # subscriptions = list_subscriptions(token)
+    subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID") if os.getenv("AZURE_SUBSCRIPTION_ID") else ""
     # check if subscription_id is empty
     if subscription_id == "":
-        logging.info(f"Subscription {sub_display_name} not found or not enabled.")
+        logging.info(f"Subscription ID not given.")
         return
     
     # listing resource groups
     # resource_groups = list_resource_groups(token, subscription_id)
-    rg_name = "MyResourceGroup"
+    rg_name = os.getenv("AZURE_RESOURCE_GROUP_NAME") if os.getenv("AZURE_RESOURCE_GROUP_NAME") else ""
+    # check if resource group name is empty
+    if rg_name == "":
+        logging.info(f"Resource Group name not given.")
+        return
 
     # listing all azure openai services
     # aoai_services = list_aoai_services(token, subscription_id, rg_name)
-    aoai_service_name = "MyOpenAIServiceName"
+    # alternativly, we can get the aoai_service_name from the environment variable
+    aoai_service_name = os.getenv("AZURE_OPENAI_SERVICE_NAME") if os.getenv("AZURE_OPENAI_SERVICE_NAME") else ""
 
     # getting commitment plan for the service
     commitment_plan_to_check = list_aoai_expired_commitment_plans(token, subscription_id, rg_name, aoai_service_name)
@@ -302,5 +316,6 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
         # find the deployment with the same name
         aoai_deployments = list_aoai_deployments(token, subscription_id, rg_name, aoai_service_name)
         for deployment in aoai_deployments:
+            # may need to do additional check here to make sure to not delete non gpt models.
             logging.info(f"simulating delete deployment: {deployment['name']}")
             # delete_aoai_deployments(token, subscription_id, rg_name, aoai_service_name, deployment["name"])
